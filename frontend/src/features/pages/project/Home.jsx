@@ -1,13 +1,14 @@
-import React, { useContext, useState, useEffect } from 'react'
-import { UserContext } from '../../context/user.context'
-import axios from "../../config/axios"
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '../../hooks/useAuth'
+import { useProject } from '../../hooks/useProject'
 import { useNavigate } from 'react-router-dom'
 
 const Home = () => {
 
-  const { user } = useContext(UserContext)
+  const { user } = useAuth()
+  const { createProject: apiCreateProject, getAllProjects } = useProject()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [projectName, setProjectName] = useState(null)
+  const [projectName, setProjectName] = useState('')
   const [project, setProject] = useState([])
 
   const navigate = useNavigate()
@@ -16,12 +17,14 @@ const Home = () => {
     e.preventDefault()
     console.log({ projectName })
 
-    axios.post('/projects/create', {
-      name: projectName,
-    })
+    apiCreateProject(projectName)
       .then((res) => {
         console.log(res)
         setIsModalOpen(false)
+        // Refresh project list after creation
+        getAllProjects().then((data) => {
+          setProject(data.projects)
+        })
       })
       .catch((error) => {
         console.log(error)
@@ -29,13 +32,13 @@ const Home = () => {
   }
 
   useEffect(() => {
-    axios.get('/projects/all').then((res) => {
-      setProject(res.data.projects)
-
+    getAllProjects().then((data) => {
+      setProject(data.projects)
     }).catch(err => {
       console.log(err)
     })
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

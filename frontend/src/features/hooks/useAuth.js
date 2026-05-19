@@ -34,5 +34,14 @@ export const useAuth = () => {
         setUser(null);
     };
 
-    return { user, loading, login, register, logout };
+    const getAllUsers = async () => {
+        setLoading(true);
+        try {
+            return await authApi.getAllUsers();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { user, loading, login, register, logout, getAllUsers };
 };

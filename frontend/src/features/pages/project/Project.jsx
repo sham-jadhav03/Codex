@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
-import { UserContext } from "../../context/user.context";
+import React, { useState, useEffect, useRef } from "react";
+import { useAuth } from "../../hooks/useAuth";
+import { useProject } from "../../hooks/useProject";
 import { useLocation } from "react-router-dom";
-import axios from "../../config/axios";
 import {
   initializeSocket,
   receiveMessage,
@@ -35,7 +35,8 @@ const Project = () => {
   const [project, setProject] = useState(location.state.project);
 
   const [message, setMessage] = useState("");
-  const { user } = useContext(UserContext);
+  const { user, getAllUsers } = useAuth();
+  const { getProject, updateFileTree, addUser } = useProject();
 
   const messageBox = React.createRef();
 
@@ -66,13 +67,9 @@ const Project = () => {
   };
 
   function addCollaborators() {
-    axios
-      .put("/projects/add-user", {
-        projectId: location.state.project._id,
-        users: Array.from(selectedUserId),
-      })
-      .then((res) => {
-        console.log(res.data);
+    addUser(location.state.project._id, Array.from(selectedUserId))
+      .then((data) => {
+        console.log(data);
         setIsModalOpen(false);
       })
       .catch((err) => {
@@ -155,19 +152,17 @@ const Project = () => {
       }
     });
 
-    axios
-      .get(`/projects/get-project/${location.state.project._id}`)
-      .then((res) => {
-        console.log(res.data.project);
+    getProject(location.state.project._id)
+      .then((data) => {
+        console.log(data.project);
 
-        setProject(res.data.project);
-        setFileTree(res.data.project.fileTree || {});
+        setProject(data.project);
+        setFileTree(data.project.fileTree || {});
       });
 
-    axios
-      .get("/users/all")
-      .then((res) => {
-        setUsers(res.data.users);
+    getAllUsers()
+      .then((data) => {
+        setUsers(data.users);
       })
       .catch((err) => {
         console.log(err);
@@ -176,13 +171,9 @@ const Project = () => {
   }, []);
 
   function saveFileTree(ft) {
-    axios
-      .put("/projects/update-file-tree", {
-        projectId: project._id,
-        fileTree: ft,
-      })
-      .then((res) => {
-        console.log(res.data);
+    updateFileTree(project._id, ft)
+      .then((data) => {
+        console.log(data);
       })
       .catch((err) => {
         console.log(err);

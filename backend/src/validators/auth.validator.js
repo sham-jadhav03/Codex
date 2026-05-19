@@ -1,13 +1,14 @@
 import { validationResult, body } from "express-validator";
 
-export const validate = async (req, res) => {
+export const validate = (req, res, next) => {
   const errors = validationResult(req);
 
-  if (errors.isEmpty()) {
+  if (!errors.isEmpty()) {
     return res.status(400).json({
       errors: errors.array(),
     });
   }
+  next();
 };
 
 export const registerValidator = [
@@ -24,7 +25,7 @@ export const registerValidator = [
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters long"),
 
-    validate
+  validate
 ];
 
 export const loginValidator = [
@@ -36,5 +37,7 @@ export const loginValidator = [
     .withMessage("Please provide a valid email"),
 
   body("password")
-    .notEmpty().withMessage("Password is requires"),
+    .notEmpty().withMessage("Password is required"),
+
+  validate
 ];
