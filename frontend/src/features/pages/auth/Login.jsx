@@ -1,32 +1,27 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from '../../config/axios'
-import { UserContext } from '../../context/auth.context'
+import { useAuth } from '../../hooks/useAuth';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const { setUser } = useContext(UserContext)
-
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     function submitHandler(e) {
+        e.preventDefault();
 
-        e.preventDefault()
-
-        axios.post('/users/login', {
-            email,
-            password
-        }).then((res) => {
-            console.log(res.data)
-            localStorage.setItem('token', res.data.token)
-            setUser(res.data.user)
-            navigate('/')
-        }).catch((err) => {
-            console.log(err)
-        })
+        login(email, password)
+            .then((res) => {
+                console.log(res);
+                navigate('/');
+            })
+            .catch((err) => {
+                console.log(err);
+            });
     }
     return (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">

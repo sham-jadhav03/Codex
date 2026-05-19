@@ -1,9 +1,9 @@
-import { createContext, useState, } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useState } from "react";
 
-export const AuthContext = createContext();
+export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 

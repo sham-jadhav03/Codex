@@ -1,4 +1,5 @@
 import React from "react";
+import hljs from "highlight.js";
 
 const CodeEditor = (props) => {
   return (

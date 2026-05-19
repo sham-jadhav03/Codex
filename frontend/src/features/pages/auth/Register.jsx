@@ -1,16 +1,15 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from '../../config/axios';
-import { UserContext } from '../../context/auth.context';
-
+import { useAuth } from '../../hooks/useAuth';
 
 const Register = () => {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const { setUser } = useContext(UserContext)
+    const { register } = useAuth();
 
     const navigate = useNavigate()
 
@@ -19,17 +18,13 @@ const Register = () => {
 
         e.preventDefault()
 
-        axios.post('/users/register', {
-            email,
-            password
-        }).then((res) => {
-            console.log(res.data)
-            localStorage.setItem('token', res.data.token)
-            setUser(res.data.user)
-            navigate('/')
-        }).catch((err) => {
-            console.log(err)
-        });
+        register(email, password)
+            .then((res) => {
+                console.log(res)
+                navigate('/')
+            }).catch((err) => {
+                console.log(err)
+            });
     }
 
     return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { UserContext } from "../../context/user.context";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import axios from "../../config/axios";
 import {
   initializeSocket,
@@ -172,6 +172,7 @@ const Project = () => {
       .catch((err) => {
         console.log(err);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function saveFileTree(ft) {
@@ -190,6 +191,7 @@ const Project = () => {
 
   saveFileTree();
 
+  // eslint-disable-next-line no-unused-vars
   function scrollToBottom() {
     messageBox.current.scrollTop = messageBox.current.scrollHeight;
   }
