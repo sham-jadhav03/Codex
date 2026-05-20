@@ -102,22 +102,22 @@
 ## 📂 Project Structure
 
 ```
-saas/
+Codex/
 ├── backend/
 │   ├── src/
-│   │   ├── config/              # Database connection (db.js)
+│   │   ├── config/              # Database & Cache connection (db.js, cache.js)
 │   │   ├── controllers/
 │   │   │   ├── ai.controller.js       # AI prompt handler
 │   │   │   ├── auth.controller.js     # Register / Login / Logout / Profile
 │   │   │   └── project.controller.js  # CRUD + collaborator management
-│   │   ├── middleware/          # JWT auth middleware
+│   │   ├── middleware/          # JWT auth & Redis Blacklist middleware
 │   │   ├── models/
 │   │   │   ├── user.model.js          # User schema (Mongoose)
 │   │   │   └── project.model.js       # Project schema with collaborators
 │   │   ├── routes/
 │   │   │   ├── auth.routes.js         # /api/auth/*
-│   │   │   ├── project.routes.js      # /api/project/*
-│   │   │   └── ai.routes.js           # /api/ai/*
+│   │   │   ├── project.routes.js      # /projects/*
+│   │   │   └── ai.routes.js           # /ai/*
 │   │   ├── services/
 │   │   │   ├── ai.service.js          # Gemini AI generation logic
 │   │   │   ├── auth.service.js        # Auth business logic
@@ -129,26 +129,21 @@ saas/
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── features/
-│   │   │   ├── components/
-│   │   │   │   ├── CodeEditor.jsx      # Monaco-style code editor
-│   │   │   │   └── FileExplorer.jsx    # Project file tree navigator
-│   │   │   ├── context/               # React Context (User state)
-│   │   │   ├── hooks/                 # Custom React hooks
-│   │   │   ├── pages/
-│   │   │   │   ├── auth/
-│   │   │   │   │   ├── Login.jsx       # Login page
-│   │   │   │   │   └── Register.jsx    # Registration page
-│   │   │   │   └── project/
-│   │   │   │       ├── Home.jsx        # Project dashboard
-│   │   │   │       ├── Project.jsx     # Main project IDE view
-│   │   │   │       └── CodeReview.jsx  # Code review panel
-│   │   │   ├── services/              # API service helpers
-│   │   │   └── config/                # Frontend config (API base URL, etc.)
-│   │   ├── routes/              # React Router route definitions
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── public/                  # Static assets (logos, icons)
+│   │   ├── app/                 # Application Entry and Routing
+│   │   │   ├── routes/          # React Router route definitions (AppRoutes.jsx)
+│   │   │   ├── App.jsx          # Main application wrapper
+│   │   │   └── index.css        # Global Tailwind CSS
+│   │   ├── features/            # 4-Layer Architecture Implementation
+│   │   │   ├── components/      # UI Layer: Reusable UI (Protected, CodeEditor)
+│   │   │   ├── context/         # State Layer: Global state (UserContext)
+│   │   │   ├── hooks/           # Hooks Layer: Logic orchestration (useAuth, useProject)
+│   │   │   ├── pages/           # UI Layer: Main route pages
+│   │   │   │   ├── auth/        # Login.jsx, Register.jsx
+│   │   │   │   └── project/     # Home.jsx, Project.jsx
+│   │   │   ├── services/        # API Layer: Backend communication (auth.api.js, project.api.js)
+│   │   │   └── config/          # Socket.io, WebContainers, and Axios configs
+│   │   └── main.jsx             # React DOM entry point
+│   ├── public/                  # Static assets
 │   ├── index.html
 │   ├── vite.config.js
 │   ├── tailwind.config.js
@@ -165,10 +160,10 @@ saas/
 
 Make sure you have the following installed:
 
-- [Node.js](https://nodejs.org/) **v14 or higher** (`node -v`)
+- [Node.js](https://nodejs.org/) **v18 or higher** (`node -v`)
 - [npm](https://www.npmjs.com/) v8+ (bundled with Node.js)
 - [MongoDB](https://www.mongodb.com/) (local installation or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) free tier)
-- [Redis](https://redis.io/) (local or [Upstash](https://upstash.com/) free tier)
+- [Redis](https://redis.io/) (local installation or [Upstash](https://upstash.com/) cloud instance)
 - A **Google Gemini API Key** — get one free at [ai.google.dev](https://ai.google.dev/)
 
 ---
