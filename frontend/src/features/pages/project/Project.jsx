@@ -52,6 +52,7 @@ const Project = () => {
   const [runProcess, setRunProcess] = useState(null);
   const [creationMode, setCreationMode] = useState(null);
   const [newItemName, setNewItemName] = useState("");
+  const [selectedDir, setSelectedDir] = useState(null);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -180,8 +181,6 @@ const Project = () => {
       });
   }
 
-  saveFileTree();
-
   // eslint-disable-next-line no-unused-vars
   function scrollToBottom() {
     messageBox.current.scrollTop = messageBox.current.scrollHeight;
@@ -192,11 +191,12 @@ const Project = () => {
       setCreationMode(null);
       return;
     }
+    const itemPath = selectedDir ? `${selectedDir}/${newItemName}` : newItemName;
     const newTree = { ...fileTree };
     if (creationMode === 'file') {
-      newTree[newItemName] = { file: { contents: '' } };
+      newTree[itemPath] = { file: { contents: '' } };
     } else if (creationMode === 'folder') {
-      newTree[newItemName] = { directory: {} };
+      newTree[itemPath] = { directory: {} };
     }
     setFileTree(newTree);
     saveFileTree(newTree);
@@ -206,17 +206,36 @@ const Project = () => {
 
   const deleteItem = (itemToDelete) => {
     const newTree = { ...fileTree };
-    delete newTree[itemToDelete];
+    const isDirectory = fileTree[itemToDelete]?.directory;
+
+    if (isDirectory) {
+      Object.keys(newTree).forEach((key) => {
+        if (key === itemToDelete || key.startsWith(itemToDelete + "/")) {
+          delete newTree[key];
+        }
+      });
+    } else {
+      delete newTree[itemToDelete];
+    }
+
     setFileTree(newTree);
     saveFileTree(newTree);
 
-    // If the deleted item was open, close it
-    if (openFiles.includes(itemToDelete)) {
-      setOpenFiles(openFiles.filter(f => f !== itemToDelete));
-      if (currentFile === itemToDelete) {
+    // If the deleted items were open, close them
+    setOpenFiles((prevOpen) => {
+      const nextOpen = prevOpen.filter((f) => {
+        if (isDirectory) {
+          return f !== itemToDelete && !f.startsWith(itemToDelete + "/");
+        }
+        return f !== itemToDelete;
+      });
+
+      if (currentFile === itemToDelete || (isDirectory && currentFile?.startsWith(itemToDelete + "/"))) {
         setCurrentFile(null);
       }
-    }
+
+      return nextOpen;
+    });
   };
 
   return (
@@ -407,6 +426,8 @@ const Project = () => {
             setNewItemName={setNewItemName}
             handleCreateNewItem={handleCreateNewItem}
             deleteItem={deleteItem}
+            selectedDir={selectedDir}
+            setSelectedDir={setSelectedDir}
           />
 
           {/* Code Editor Area */}
