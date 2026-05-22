@@ -1,30 +1,34 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-
-const projectSchema = new mongoose.Schema({
+const projectSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        lowercase: true,
-        required: true,
-        trim: true,
-        unique: [ true, 'Project name must be unique' ],
+      type: String,
+      lowercase: true,
+      required: true,
+      trim: true,
     },
-
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      require: true,
+    },
     users: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'user'
-        }
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user",
+      },
     ],
     fileTree: {
-        type: Object,
-        default: {}
+      type: Object,
+      default: {},
     },
+  },
+  { timestamps: true },
+);
 
-})
+projectSchema.index({ name: 1, owner: 1 }, { unique: true });
 
-
-const Project = mongoose.model('project', projectSchema)
-
+const Project = mongoose.model("project", projectSchema);
 
 export default Project;
