@@ -52,7 +52,7 @@ const Project = () => {
   const [runProcess, setRunProcess] = useState(null);
   const [creationMode, setCreationMode] = useState(null);
   const [newItemName, setNewItemName] = useState("");
-  const [selectedDir, setSelectedDir] = useState(null);
+  const [selectedDir, setSelectedDir] = useState("");
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -153,13 +153,12 @@ const Project = () => {
       }
     });
 
-    getProject(location.state.project._id)
-      .then((data) => {
-        console.log(data.project);
+    getProject(location.state.project._id).then((data) => {
+      console.log(data.project);
 
-        setProject(data.project);
-        setFileTree(data.project.fileTree || {});
-      });
+      setProject(data.project);
+      setFileTree(data.project.fileTree || {});
+    });
 
     getAllUsers()
       .then((data) => {
@@ -172,12 +171,15 @@ const Project = () => {
   }, []);
 
   function saveFileTree(ft) {
+    //Guard - never fire without a valid tree
+    if (!ft || typeof ft !== "object") return;
+
     updateFileTree(project._id, ft)
       .then((data) => {
         console.log(data);
       })
       .catch((err) => {
-        console.log(err);
+        console.error("[saveFileTree]", err);
       });
   }
 
@@ -187,55 +189,73 @@ const Project = () => {
   }
 
   const handleCreateNewItem = () => {
-    if (!newItemName) {
+    // Guard — do nothing if name is empty
+    if (!newItemName.trim()) {
       setCreationMode(null);
       return;
     }
-    const itemPath = selectedDir ? `${selectedDir}/${newItemName}` : newItemName;
+
+    // Sanitise: strip leading/trailing slashes and whitespace
+    const cleanName = newItemName.trim().replace(/^\/+|\/+$/g, "");
+
+    // Build full path: prefix with selectedDir if one is active
+    // e.g. selectedDir = "src", cleanName = "Button.jsx" → "src/Button.jsx"
+    const fullPath = selectedDir ? `${selectedDir}/${cleanName}` : cleanName;
+
     const newTree = { ...fileTree };
-    if (creationMode === 'file') {
-      newTree[itemPath] = { file: { contents: '' } };
-    } else if (creationMode === 'folder') {
-      newTree[itemPath] = { directory: {} };
+
+    if (creationMode === "file") {
+      newTree[fullPath] = { file: { contents: "" } };
+    } else if (creationMode === "folder") {
+      newTree[fullPath] = { directory: {} };
     }
+
     setFileTree(newTree);
-    saveFileTree(newTree);
+    saveFileTree(newTree); // pass newTree explicitly — fixes TD-01
+    setCurrentFile(creationMode === "file" ? fullPath : currentFile);
+
+    if (creationMode === "file") {
+      setOpenFiles((prev) => [...new Set([...prev, fullPath])]);
+    }
+
     setCreationMode(null);
     setNewItemName("");
   };
 
-  const deleteItem = (itemToDelete) => {
+  const deleteItem = (itemPath) => {
     const newTree = { ...fileTree };
-    const isDirectory = fileTree[itemToDelete]?.directory;
 
-    if (isDirectory) {
-      Object.keys(newTree).forEach((key) => {
-        if (key === itemToDelete || key.startsWith(itemToDelete + "/")) {
-          delete newTree[key];
-        }
-      });
-    } else {
-      delete newTree[itemToDelete];
-    }
+    // Delete the item itself
+    delete newTree[itemPath];
+
+    // If it was a directory, also delete all children
+    // (keys that start with "itemPath/")
+    const childPrefix = `${itemPath}/`;
+    Object.keys(newTree).forEach((key) => {
+      if (key.startsWith(childPrefix)) {
+        delete newTree[key];
+      }
+    });
 
     setFileTree(newTree);
-    saveFileTree(newTree);
+    saveFileTree(newTree); // pass explicitly — fixes TD-01
 
-    // If the deleted items were open, close them
-    setOpenFiles((prevOpen) => {
-      const nextOpen = prevOpen.filter((f) => {
-        if (isDirectory) {
-          return f !== itemToDelete && !f.startsWith(itemToDelete + "/");
-        }
-        return f !== itemToDelete;
-      });
+    // Close any tabs that were inside the deleted path
+    const affectedFiles = openFiles.filter(
+      (f) => f === itemPath || f.startsWith(childPrefix),
+    );
 
-      if (currentFile === itemToDelete || (isDirectory && currentFile?.startsWith(itemToDelete + "/"))) {
-        setCurrentFile(null);
+    if (affectedFiles.length > 0) {
+      const remainingOpen = openFiles.filter(
+        (f) => f !== itemPath && !f.startsWith(childPrefix),
+      );
+      setOpenFiles(remainingOpen);
+
+      // If current file was deleted, switch to last remaining open file
+      if (affectedFiles.includes(currentFile)) {
+        setCurrentFile(remainingOpen[remainingOpen.length - 1] || null);
       }
-
-      return nextOpen;
-    });
+    }
   };
 
   return (
@@ -277,12 +297,13 @@ const Project = () => {
                 </small>
 
                 <div
-                  className={`p-3 rounded-2xl shadow-sm text-sm ${msg?.sender?._id === "ai"
-                    ? "bg-gray-800 text-gray-100 rounded-tl-none border border-gray-700"
-                    : msg?.sender?._id === user._id.toString()
-                      ? "bg-blue-600 text-white rounded-tr-none"
-                      : "bg-gray-700 text-gray-200 rounded-tl-none"
-                    }`}
+                  className={`p-3 rounded-2xl shadow-sm text-sm ${
+                    msg?.sender?._id === "ai"
+                      ? "bg-gray-800 text-gray-100 rounded-tl-none border border-gray-700"
+                      : msg?.sender?._id === user._id.toString()
+                        ? "bg-blue-600 text-white rounded-tr-none"
+                        : "bg-gray-700 text-gray-200 rounded-tl-none"
+                  }`}
                 >
                   {msg?.sender?._id === "ai" ? (
                     WriteAiMessage(msg.message)
@@ -428,6 +449,7 @@ const Project = () => {
             deleteItem={deleteItem}
             selectedDir={selectedDir}
             setSelectedDir={setSelectedDir}
+            onDirSelect={setSelectedDir}
           />
 
           {/* Code Editor Area */}
