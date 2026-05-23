@@ -105,7 +105,7 @@ const Project = () => {
   }
 
   useEffect(() => {
-    initializeSocket(project._id);
+    const socket = initializeSocket(project._id);
 
     if (!webContainer) {
       getWebContainer().then((container) => {
@@ -167,7 +167,14 @@ const Project = () => {
       .catch((err) => {
         console.log(err);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+      
+    return () => {
+      if(socket) {
+        socket.off("project-message");
+        socket.disconnect()
+      }
+    }
   }, []);
 
   function saveFileTree(ft) {

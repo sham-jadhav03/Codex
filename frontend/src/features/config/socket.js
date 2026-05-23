@@ -19,6 +19,13 @@ export const initializeSocket = (projectId) => {
 
 }
 
+export const disconnectSocket = () => {
+   if(socketInstance){
+    socketInstance.disconnect()
+    socketInstance = null;
+   }
+}
+
 export const receiveMessage = (eventName, cb) => {
     socketInstance.on(eventName, cb);
 }
