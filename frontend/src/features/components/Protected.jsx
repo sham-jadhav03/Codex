@@ -3,29 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/user.context";
 
 export const Protected = ({ children }) => {
-    const { user, setLoading, loading } = useContext(UserContext);
-    const token = localStorage.getItem("token");
+    const { user, loading } = useContext(UserContext);
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (user) {
-            setLoading(false);
+        if (!loading) {
+            const token = localStorage.getItem("token");
+            if (!token || !user) {
+                navigate("/login");
+            }
         }
-
-        if (!token) {
-            navigate("/login");
-        }
-
-        if (!user) {
-            navigate("/login");
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [loading, user, navigate]);
 
     if (loading) {
-        return <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-            <div className="text-white">Loading...</div>
-        </div>;
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="text-white">Loading...</div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return null;
     }
 
     return (

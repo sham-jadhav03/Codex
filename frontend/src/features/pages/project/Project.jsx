@@ -295,10 +295,10 @@ const Project = () => {
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`${msg?.sender?._id === "ai" ? "max-w-xs" : "max-w-xs"} ${msg?.sender?._id == user._id.toString() && "ml-auto"} message flex flex-col`}
+                className={`${msg?.sender?._id === "ai" ? "max-w-xs" : "max-w-xs"} ${msg?.sender?._id === user?._id && "ml-auto"} message flex flex-col`}
               >
                 <small
-                  className={`text-[10px] mb-1 px-1 ${msg?.sender?._id === user._id.toString() ? "text-right text-gray-400" : "text-gray-400"}`}
+                  className={`text-[10px] mb-1 px-1 ${msg?.sender?._id === user?._id ? "text-right text-gray-400" : "text-gray-400"}`}
                 >
                   {msg?.sender?.email}
                 </small>
@@ -307,7 +307,7 @@ const Project = () => {
                   className={`p-3 rounded-2xl shadow-sm text-sm ${
                     msg?.sender?._id === "ai"
                       ? "bg-gray-800 text-gray-100 rounded-tl-none border border-gray-700"
-                      : msg?.sender?._id === user._id.toString()
+                      : msg?.sender?._id === user?._id
                         ? "bg-blue-600 text-white rounded-tr-none"
                         : "bg-gray-700 text-gray-200 rounded-tl-none"
                   }`}

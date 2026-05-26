@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 const Home = () => {
 
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { createProject: apiCreateProject, getAllProjects } = useProject()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [projectName, setProjectName] = useState('')
@@ -54,6 +54,10 @@ const Home = () => {
           <button className="flex items-center gap-3 p-3 rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
             <i className="ri-settings-4-line text-lg"></i>
             Settings
+          </button>
+          <button onClick={logout} className="flex items-center gap-3 p-3 rounded-xl text-red-400 hover:bg-red-950/30 hover:text-red-300 transition-colors">
+            <i className="ri-logout-box-r-line text-lg"></i>
+            Logout
           </button>
         </nav>
         <div className='mt-auto flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl border border-gray-700'>

@@ -17,9 +17,10 @@ export const createUser = async ({
     return user;
 }
 
-export const getAllUsers = async () => {
-    return await userModel.find({
-        _id: { $ne: null }
-    });
-
+export const getAllUsers = async ({ userId } = {}) => {
+    const query = {};
+    if (userId) {
+        query._id = { $ne: userId };
+    }
+    return await userModel.find(query);
 }

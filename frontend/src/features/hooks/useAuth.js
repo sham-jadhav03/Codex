@@ -29,9 +29,15 @@ export const useAuth = () => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem("token");
-        setUser(null);
+    const logout = async () => {
+        try {
+            await authApi.logout();
+        } catch (err) {
+            console.error("Backend logout failed:", err);
+        } finally {
+            localStorage.removeItem("token");
+            setUser(null);
+        }
     };
 
     const getAllUsers = async () => {

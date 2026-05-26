@@ -49,22 +49,22 @@ export const loginController = async (req, res) => {
 }
 
 export const profileController = async (req, res) => {
-
+    const user = req.user.toObject ? req.user.toObject() : { ...req.user };
+    delete user.password;
     res.status(200).json({
-        user: req.user
+        user
     });
 }
 
 export const logoutController = async (req, res) => {
-
     try {
-
-        const token = req.cookies.token || req.header.authorization.split(' ')[1];
-
-        redisClient.set(token, 'logout', 'EX', 60 * 60 * 24);
-
+        const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(400).json({ message: 'Token is required for logout' });
+        }
+        await redisClient.set(token, 'logout', 'EX', 60 * 60 * 24);
+        res.cookie('token', '');
         res.status(200).json({ message: 'Logged out successfully' });
-
     } catch (error) {
         console.error(error);
         res.status(400).send({ message: error.message });
@@ -73,11 +73,7 @@ export const logoutController = async (req, res) => {
 
 export const getAllUsersController = async (req, res) => {
     try {
-
-        const loggedInUser = await userModel.findOne({
-            email: req.user.email
-        })
-
+        const loggedInUser = req.user;
         const allUsers = await authService.getAllUsers({ userId: loggedInUser._id });
 
         return res.status(200).json({
