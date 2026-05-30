@@ -41,12 +41,7 @@ export const useAuth = () => {
     };
 
     const getAllUsers = async () => {
-        setLoading(true);
-        try {
-            return await authApi.getAllUsers();
-        } finally {
-            setLoading(false);
-        }
+        return await authApi.getAllUsers();
     };
 
     return { user, loading, login, register, logout, getAllUsers };
