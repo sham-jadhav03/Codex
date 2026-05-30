@@ -1,10 +1,30 @@
-import React from "react";
-import hljs from "highlight.js";
+import React, { useRef } from "react";
+import Editor from "@monaco-editor/react";
 import { getLanguageFromFilename } from "../utils/buildTree";
 
 const CodeEditor = (props) => {
+  const debounceTimer = useRef(null);
+
+  const handleEditorChange = (val) => {
+    const ft = {
+      ...props.fileTree,
+      [props.currentFile]: {
+        file: { contents: val ?? "" },
+      },
+    };
+    props.setFileTree(ft);
+
+    // Debounce database saves by 1 second to avoid database and network overhead
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    debounceTimer.current = setTimeout(() => {
+      props.saveFileTree(ft);
+    }, 1000);
+  };
+
   return (
-    <div className="code-editor flex flex-col flex-grow h-full relative bg-gray-950">
+    <div className="code-editor flex flex-col flex-grow h-full relative bg-[#0a0a0a]">
       {/* ── Tab bar ─────────────────────────────────────────────────────────── */}
       <div
         className="top flex overflow-x-auto bg-gray-900 border-b border-gray-800
@@ -35,7 +55,7 @@ const CodeEditor = (props) => {
               <i
                 onClick={(e) => {
                   e.stopPropagation();
-                  props.deleteItem(file);
+                  props.closeFile(file);
                 }}
                 className="ri-close-fill text-gray-500 hover:text-white
                   transition-colors duration-150"
@@ -47,56 +67,31 @@ const CodeEditor = (props) => {
 
       {/* ── Editor area ─────────────────────────────────────────────────────── */}
       <div
-        className="bottom flex flex-grow max-w-full shrink overflow-auto
-        relative custom-scrollbar"
+        className="bottom flex flex-grow max-w-full shrink overflow-hidden
+        relative bg-[#0a0a0a]"
       >
         {props.currentFile && props.fileTree[props.currentFile] ? (
-          <div
-            className="code-editor-area h-full w-full bg-gray-950 font-mono text-sm
-            leading-relaxed"
-          >
-            <pre className="hljs h-full w-full m-0">
-              <code
-                className="hljs h-full outline-none w-full p-6"
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => {
-                  const updatedContent = e.target.innerText;
-                  const ft = {
-                    ...props.fileTree,
-                    [props.currentFile]: {
-                      file: { contents: updatedContent },
-                    },
-                  };
-                  props.setFileTree(ft);
-                  props.saveFileTree(ft); // explicit ft — fixes TD-01
-                }}
-                dangerouslySetInnerHTML={{
-                  __html: (() => {
-                    // ── Language detection — fixes TD-07 ──────────────────────
-                    const lang = getLanguageFromFilename(props.currentFile);
-                    const contents =
-                      props.fileTree[props.currentFile]?.file?.contents ?? "";
-                    try {
-                      return hljs.highlight(lang, contents).value;
-                    } catch {
-                      // Fallback: no highlighting, plain text escaped
-                      return contents
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;");
-                    }
-                  })(),
-                }}
-                style={{
-                  whiteSpace: "pre-wrap",
-                  paddingBottom: "25rem",
-                  fontFamily: '"Fira Code", monospace',
-                  fontSize: "14px",
-                  backgroundColor: "#0a0a0a",
-                }}
-              />
-            </pre>
+          <div className="code-editor-area h-full w-full bg-[#0a0a0a]">
+            <Editor
+              height="100%"
+              theme="vs-dark"
+              language={getLanguageFromFilename(props.currentFile)}
+              value={props.fileTree[props.currentFile]?.file?.contents ?? ""}
+              onChange={handleEditorChange}
+              options={{
+                fontSize: 14,
+                fontFamily: '"Fira Code", "Courier New", monospace',
+                minimap: { enabled: false },
+                automaticLayout: true,
+                cursorBlinking: "smooth",
+                scrollbar: {
+                  vertical: "visible",
+                  horizontal: "visible",
+                },
+                padding: { top: 16 },
+                tabSize: 2,
+              }}
+            />
           </div>
         ) : (
           /* ── Empty state ─────────────────────────────────────────────────── */

@@ -6,6 +6,7 @@
 // -- contants -- //
 
 const MAX_FILE_SIZE_BYTES = 512 * 1024; //  512KB hard limit for project
+const MAX_FILE_TREE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB limit for entire file tree
 const MAX_DEPTH = 10; // src/a/b/c/d/e/f/g.js = 8 levels
 const MAX_FILES = 200; // per project
 const MAX_FILENAME_LENGTH = 128;
@@ -96,7 +97,7 @@ export const validateFileTree = (fileTree) => {
 
   for (const key of keys) {
     // Validate the path key itself
-    const pathResult = validatePath(key);
+    const pathResult = validateFilePath(key);
     if (!pathResult.valid) return pathResult;
 
     const node = fileTree[key];

@@ -11,6 +11,7 @@ import Markdown from "markdown-to-jsx";
 import { getWebContainer } from "../../config/webContainer";
 import CodeEditor from "../../components/CodeEditor";
 import FileExplorer from "../../components/FileExplorer";
+import TerminalPanel from "../../components/TerminalPanel";
 
 function SyntaxHighlightedCode(props) {
   const ref = useRef(null);
@@ -53,6 +54,7 @@ const Project = () => {
   const [creationMode, setCreationMode] = useState(null);
   const [newItemName, setNewItemName] = useState("");
   const [selectedDir, setSelectedDir] = useState("");
+  const [terminal, setTerminal] = useState(null);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -265,6 +267,15 @@ const Project = () => {
     }
   };
 
+  const closeFile = (itemPath) => {
+    const remainingOpen = openFiles.filter((f) => f !== itemPath);
+    setOpenFiles(remainingOpen);
+
+    if (currentFile === itemPath) {
+      setCurrentFile(remainingOpen[remainingOpen.length - 1] || null);
+    }
+  };
+
   return (
     <main className="h-screen w-screen flex bg-gray-950">
       {/* Left Pane: Chat & Collaboration */}
@@ -405,24 +416,35 @@ const Project = () => {
             <button
               onClick={async () => {
                 await webContainer.mount(fileTree);
+                
+                terminal?.clear();
+                terminal?.write("\r\n\x1b[1;34m[System]: Installing dependencies...\x1b[0m\r\n");
+
                 const installProcess = await webContainer.spawn("npm", [
                   "install",
                 ]);
                 installProcess.output.pipeTo(
                   new WritableStream({
                     write(chunk) {
-                      console.log(chunk);
+                      terminal?.write(chunk);
                     },
                   }),
                 );
+
+                // Wait for npm install to finish
+                await installProcess.exit;
+
                 if (runProcess) {
                   runProcess.kill();
                 }
+
+                terminal?.write("\r\n\x1b[1;32m[System]: Starting project...\x1b[0m\r\n");
+
                 let tempRunProcess = await webContainer.spawn("npm", ["start"]);
                 tempRunProcess.output.pipeTo(
                   new WritableStream({
                     write(chunk) {
-                      console.log(chunk);
+                      terminal?.write(chunk);
                     },
                   }),
                 );
@@ -459,40 +481,51 @@ const Project = () => {
             onDirSelect={setSelectedDir}
           />
 
-          {/* Code Editor Area */}
-          <CodeEditor
-            openFiles={openFiles}
-            setOpenFiles={setOpenFiles}
-            fileTree={fileTree}
-            currentFile={currentFile}
-            setCurrentFile={setCurrentFile}
-            setFileTree={setFileTree}
-            saveFileTree={saveFileTree}
-            deleteItem={deleteItem}
-          />
+          {/* Main workspace container (Editor, Preview + Terminal at bottom) */}
+          <div className="flex flex-col flex-grow h-full overflow-hidden">
+            <div className="flex flex-grow h-2/3 overflow-hidden">
+              {/* Code Editor Area */}
+              <CodeEditor
+                openFiles={openFiles}
+                setOpenFiles={setOpenFiles}
+                fileTree={fileTree}
+                currentFile={currentFile}
+                setCurrentFile={setCurrentFile}
+                setFileTree={setFileTree}
+                saveFileTree={saveFileTree}
+                deleteItem={deleteItem}
+                closeFile={closeFile}
+              />
 
-          {/* Preview Iframe */}
-          {iframeUrl && webContainer && (
-            <div className="flex min-w-96 w-96 flex-col h-full border-l border-gray-800 bg-white shadow-xl animate-slide-in">
-              <div className="address-bar p-2 bg-gray-100 border-b border-gray-200 flex flex-col gap-1">
-                <div className="flex items-center gap-1 mb-1">
-                  <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                  <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
+              {/* Preview Iframe */}
+              {iframeUrl && webContainer && (
+                <div className="flex min-w-96 w-96 flex-col h-full border-l border-gray-800 bg-white shadow-xl animate-slide-in">
+                  <div className="address-bar p-2 bg-gray-100 border-b border-gray-200 flex flex-col gap-1">
+                    <div className="flex items-center gap-1 mb-1">
+                      <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                    </div>
+                    <input
+                      type="text"
+                      onChange={(e) => setIframeUrl(e.target.value)}
+                      value={iframeUrl}
+                      className="w-full p-1.5 px-3 text-xs bg-white border border-gray-300 rounded-md text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                  <iframe
+                    src={iframeUrl}
+                    className="w-full flex-grow bg-white border-none"
+                  ></iframe>
                 </div>
-                <input
-                  type="text"
-                  onChange={(e) => setIframeUrl(e.target.value)}
-                  value={iframeUrl}
-                  className="w-full p-1.5 px-3 text-xs bg-white border border-gray-300 rounded-md text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-                />
-              </div>
-              <iframe
-                src={iframeUrl}
-                className="w-full flex-grow bg-white border-none"
-              ></iframe>
+              )}
             </div>
-          )}
+
+            {/* Interactive Terminal Panel */}
+            <div className="h-1/3 min-h-[180px] w-full">
+              <TerminalPanel onTerminalReady={setTerminal} />
+            </div>
+          </div>
         </div>
       </section>
 
