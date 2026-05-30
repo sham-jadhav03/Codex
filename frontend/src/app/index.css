@@ -23,3 +23,9 @@ body {
 .message-box::-webkit-scrollbar{
   display: none;
 }
+
+/* Peer Cursor & Collaborator Styling inside Monaco Editor */
+.peer-cursor {
+  background-color: #3b82f6 !important; /* blue-500 */
+  width: 2px !important;
+}

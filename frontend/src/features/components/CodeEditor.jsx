@@ -1,9 +1,13 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { getLanguageFromFilename } from "../utils/buildTree";
+import { sendMessage } from "../config/socket";
 
 const CodeEditor = (props) => {
   const debounceTimer = useRef(null);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const decorationsRef = useRef([]);
 
   const handleEditorChange = (val) => {
     const ft = {
@@ -22,6 +26,64 @@ const CodeEditor = (props) => {
       props.saveFileTree(ft);
     }, 1000);
   };
+
+  const handleEditorMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+  };
+
+  // Broadcast cursor movements over socket to other users
+  useEffect(() => {
+    if (!editorRef.current || !props.currentFile) return;
+
+    const editor = editorRef.current;
+
+    const cursorListener = editor.onDidChangeCursorPosition((e) => {
+      sendMessage("cursor-move", {
+        file: props.currentFile,
+        position: e.position,
+      });
+    });
+
+    return () => {
+      cursorListener.dispose();
+    };
+  }, [props.currentFile]);
+
+  // Sync cursor decorations inside Monaco Editor
+  useEffect(() => {
+    if (!editorRef.current || !monacoRef.current || !props.currentFile) return;
+
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+
+    const newDecorations = [];
+
+    if (props.peerCursors) {
+      Object.entries(props.peerCursors).forEach(([userId, peer]) => {
+        // Render decoration only if peer is editing the same file
+        if (peer.file !== props.currentFile || !peer.position) return;
+
+        newDecorations.push({
+          range: new monaco.Range(
+            peer.position.lineNumber,
+            peer.position.column,
+            peer.position.lineNumber,
+            peer.position.column
+          ),
+          options: {
+            className: "peer-cursor",
+            hoverMessage: { value: `${peer.email} is editing here` },
+          },
+        });
+      });
+    }
+
+    decorationsRef.current = editor.deltaDecorations(
+      decorationsRef.current,
+      newDecorations
+    );
+  }, [props.peerCursors, props.currentFile]);
 
   return (
     <div className="code-editor flex flex-col flex-grow h-full relative bg-[#0a0a0a]">
@@ -78,6 +140,7 @@ const CodeEditor = (props) => {
               language={getLanguageFromFilename(props.currentFile)}
               value={props.fileTree[props.currentFile]?.file?.contents ?? ""}
               onChange={handleEditorChange}
+              onMount={handleEditorMount}
               options={{
                 fontSize: 14,
                 fontFamily: '"Fira Code", "Courier New", monospace',

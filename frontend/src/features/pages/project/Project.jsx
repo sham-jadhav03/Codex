@@ -55,6 +55,7 @@ const Project = () => {
   const [newItemName, setNewItemName] = useState("");
   const [selectedDir, setSelectedDir] = useState("");
   const [terminal, setTerminal] = useState(null);
+  const [peerCursors, setPeerCursors] = useState({});
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -155,6 +156,13 @@ const Project = () => {
       }
     });
 
+    receiveMessage("cursor-move", (data) => {
+      setPeerCursors((prev) => ({
+        ...prev,
+        [data.userId]: data,
+      }));
+    });
+
     getProject(location.state.project._id).then((data) => {
       console.log(data.project);
 
@@ -174,6 +182,7 @@ const Project = () => {
     return () => {
       if(socket) {
         socket.off("project-message");
+        socket.off("cursor-move");
         socket.disconnect()
       }
     }
@@ -495,6 +504,7 @@ const Project = () => {
                 saveFileTree={saveFileTree}
                 deleteItem={deleteItem}
                 closeFile={closeFile}
+                peerCursors={peerCursors}
               />
 
               {/* Preview Iframe */}

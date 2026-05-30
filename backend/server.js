@@ -72,7 +72,11 @@ io.on('connection', (socket) => {
 
             const prompt = message.replace('@ai', '').trim();
 
-            const result = await genarateResult(prompt);
+            // Fetch the latest file tree from the database to supply context to Gemini
+            const latestProject = await projectModel.findById(socket.project._id);
+            const fileTree = latestProject?.fileTree || {};
+
+            const result = await genarateResult(prompt, fileTree);
 
             io.to(socket.roomId).emit('project-message', {
                 message: result,
@@ -87,6 +91,15 @@ io.on('connection', (socket) => {
 
 
     })
+
+    socket.on('cursor-move', data => {
+        socket.broadcast.to(socket.roomId).emit('cursor-move', {
+            userId: socket.user._id,
+            email: socket.user.email,
+            file: data.file,
+            position: data.position
+        });
+    });
 
     socket.on('disconnect', () => {
         console.log('user disconnected');

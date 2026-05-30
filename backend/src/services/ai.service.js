@@ -99,9 +99,26 @@ Your task is to generate production-ready, clean, and runable code that executes
 
 });
 
-export const genarateResult = async (prompt) => {
+export const genarateResult = async (prompt, fileTree = {}) => {
+  // Compile existing workspace structure and code contents as context
+  let codebaseContext = "";
+  if (Object.keys(fileTree).length > 0) {
+    codebaseContext = "Here is the current codebase structure and file contents for context:\n";
+    for (const [filePath, fileNode] of Object.entries(fileTree)) {
+      if (fileNode.file && typeof fileNode.file.contents === "string") {
+        codebaseContext += `\n--- File: ${filePath} ---\n${fileNode.file.contents}\n`;
+      } else if (fileNode.directory) {
+        codebaseContext += `\n--- Directory: ${filePath} ---\n`;
+      }
+    }
+  }
 
-  const result = await model.generateContent(prompt)
+  // Combine context with prompt
+  const fullPrompt = codebaseContext 
+    ? `${codebaseContext}\n\nUser Prompt: ${prompt}\n\nTask: Incorporate this request into the existing codebase and output the entire updated package structure as valid JSON.`
+    : prompt;
+
+  const result = await model.generateContent(fullPrompt);
 
   return result.response.text();
 }
